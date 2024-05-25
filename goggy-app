@@ -1,0 +1,150 @@
+git clone https://github.com/goggy-app/photo-video-app-backend.git
+git clone https://github.com/goggy-app/photo-video-app-frontend.git
+cd photo-video-app-backend
+git add .
+git commit -m "Initial commit"
+git push origin main
+npm install -g heroku
+heroku login
+heroku create goggy-app-name
+heroku addons:create mongolab
+heroku config:set MONGO_URI=your_mongo_db_connection_string
+heroku config:set JWT_SECRET=your_jwt_secret
+git push heroku main
+cd photo-video-app-frontend
+git add .
+git commit -m "Initial commit"
+git push origin main
+npm install -g vercel
+vercel login
+vercel
+import axios from 'axios';
+
+const API = axios.create({ baseURL: 'https://goggy-app-backend-app-name.herokuapp.com/api' });
+
+export default API;
+import React from 'react';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import './App.css';
+
+function App() {
+  return (
+    <Router>
+      <Navbar />
+      <Switch>
+        <Route path="/" exact component={Home} />
+        <Route path="/login" component={Login} />
+        <Route path="/register" component={Register} />
+      </Switch>
+    </Router>
+  );
+}
+
+export default App;
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+const Navbar = () => {
+  return (
+    <nav>
+      <h1>Photo Video App</h1>
+      <ul>
+        <li><Link to="/">Home</Link></li>
+        <li><Link to="/login">Login</Link></li>
+        <li><Link to="/register">Register</Link></li>
+      </ul>
+    </nav>
+  );
+};
+
+export default Navbar;
+import React, { useEffect, useState } from 'react';
+import API from '../api';
+
+const Home = () => {
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      const { data } = await API.get('/posts');
+      setPosts(data);
+    };
+    fetchPosts();
+  }, []);
+
+  return (
+    <div>
+      <h2>Home</h2>
+      {posts.map(post => (
+        <div key={post._id}>
+          <h3>{post.user.name}</h3>
+          <p>{post.caption}</p>
+          {post.image && <img src={`https://goggy-app-backend-app-name.herokuapp.com/${post.image}`} alt="Post" />}
+          {post.video && <video controls src={`https://goggy-app-backend-app-name.herokuapp.com/${post.video}`} />}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default Home;
+import React, { useState } from 'react';
+import API from '../api';
+
+const Login = ({ history }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const { data } = await API.post('/auth/login', { email, password });
+    localStorage.setItem('userInfo', JSON.stringify(data));
+    history.push('/');
+  };
+
+  return (
+    <div>
+      <h2>Login</h2>
+      <form onSubmit={handleSubmit}>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
+        <button type="submit">Login</button>
+      </form>
+    </div>
+  );
+};
+
+export default Login;
+import React, { useState } from 'react';
+import API from '../api';
+
+const Register = ({ history }) => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const { data } = await API.post('/auth/register', { name, email, password });
+    localStorage.setItem('userInfo', JSON.stringify(data));
+    history.push('/');
+  };
+
+  return (
+    <div>
+      <h2>Register</h2>
+      <form onSubmit={handleSubmit}>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
+        <button type="submit">Register</button>
+      </form>
+    </div>
+  );
+};
+
+export default Register;
